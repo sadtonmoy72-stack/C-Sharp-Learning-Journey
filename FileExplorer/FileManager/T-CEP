@@ -1,0 +1,63 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}dependencies {
+  implementation 'com.google.android.gms:play-services-auth:21.4.0'
+  implementation 'com.google.android.gms:play-services-auth-api-phone:18.3.0'
+}// Construct a request for phone numbers and show the picker
+private void requestHint() {
+    HintRequest hintRequest = new HintRequest.Builder()
+            .setPhoneNumberIdentifierSupported(true)
+            .build();
+
+    PendingIntent intent = Auth.CredentialsApi.getHintPickerIntent(
+            apiClient, hintRequest);
+    startIntentSenderForResult(intent.getIntentSender(),
+            RESOLVE_HINT, null, 0, 0, 0);
+}
+
+// Obtain the phone number from the result
+@Override
+public void onActivityResult(int requestCode, int resultCode, Intent data) {
+  super.onActivityResult(requestCode, resultCode, data);
+  if (requestCode == RESOLVE_HINT) {
+      if (resultCode == RESULT_OK) {
+          Credential credential = data.getParcelableExtra(Credential.EXTRA_KEY);
+          // credential.getId();  <-- will need to process phone number string
+      }
+  }
+}// Get an instance of SmsRetrieverClient, used to start listening for a matching
+// SMS message.
+SmsRetrieverClient client = SmsRetriever.getClient(this /* context */);
+
+// Starts SmsRetriever, which waits for ONE matching SMS message until timeout
+// (5 minutes). The matching SMS message will be sent using a Broadcast Intent
+// with action SmsRetriever#SMS_RETRIEVED_ACTION.
+Task<Void> task = client.startSmsRetriever();
+
+// Listen for success/failure of the start Task. If in a background thread, this
+// can be made blocking using Tasks.await(task, [timeout]);
+task.addOnSuccessListener(new OnSuccessListener<Void>() {
+  @Override
+  public void onSuccess(Void aVoid) {
+    // Successfully started retriever, expect broadcast intent
+    // ...
+  }
+});
+
+task.addOnFailureListener(new OnFailureListener() {
+  @Override
+  public void onFailure(@NonNull Exception e) {
+    // Failed to start retriever, inspect Exception for more details
+    // ...
+  }
+});
